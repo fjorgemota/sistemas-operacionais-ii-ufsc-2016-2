@@ -167,36 +167,40 @@ void Thread::wait()
 {
     lock();
 
-    db<Thread>(TRC) << "Thread::wait(running=" << _running << ")" << endl;
+    db<Thread>(TRC) << "Thread::wait(this=" << this << ")" << endl;
 
-    if(!_ready.empty()) {
-        Thread * prev = _running;
-        prev->_state = WAITING;
-        _waiting.insert(&prev->_link);
+    if(_running != this)
+        _ready.remove(this);
 
+    _state = WAITING;
+    _waiting.insert(&_link);
+
+    if((_running == this) && !_ready.empty()) {
         _running = _ready.remove()->object();
         _running->_state = RUNNING;
 
-        dispatch(prev, _running);
-    } else
-        idle();
-
+        dispatch(this, _running);
+    } else {
+        idle(); // implicit unlock()
+    }
+    
     unlock();
 }
+
 
 void Thread::sinalize()
 {
     lock();
 
-    db<Thread>(TRC) << "Thread::sinalize(this=" << _running << ")" << endl;
-    if (!_waiting.empty()) {
-        Thread * _sinalized = _waiting.remove()->object();
-        _sinalized->_state = READY;
-        _ready.insert(&_sinalized->_link);
-    }
+    db<Thread>(TRC) << "Thread::sinalize(this=" << this << ")" << endl;
+
+   _waiting.remove(this);
+   _state = READY;
+   _ready.insert(&_link);
 
    unlock();
 }
+
 
 void Thread::exit(int status)
 {

@@ -1,6 +1,10 @@
 // EPOS Semaphore Abstraction Implementation
 
 #include <semaphore.h>
+#include <thread.h>
+#include <utility/queue.h>
+
+
 
 __BEGIN_SYS
 

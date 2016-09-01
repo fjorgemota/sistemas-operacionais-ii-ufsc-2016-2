@@ -22,8 +22,9 @@ void Mutex::lock()
 
     begin_atomic();
     if(tsl(_locked))
-        while(tsl(_locked))
-            sleep(); // implicit end_atomic()
+        // while(tsl(_locked))
+        //     sleep(); // implicit end_atomic()
+        block();
     else
         end_atomic();
 }
@@ -35,7 +36,8 @@ void Mutex::unlock()
 
     begin_atomic();
     _locked = false;
-    wakeup(); // implicit end_atomic()
+    // wakeup(); // implicit end_atomic()
+    release();
 }
 
 __END_SYS

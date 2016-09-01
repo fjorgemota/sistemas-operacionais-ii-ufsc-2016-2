@@ -11,8 +11,13 @@ __BEGIN_SYS
 class Synchronizer_Common
 {
 protected:
-    Synchronizer_Common() {}
-
+    Thread::Queue _waiting; 
+    
+    Synchronizer_Common() {
+        _waiting = Thread::Queue();
+    }
+    
+    
     // Atomic operations
     bool tsl(volatile bool & lock) { return CPU::tsl(lock); }
     int finc(volatile int & number) { return CPU::finc(number); }
@@ -23,8 +28,16 @@ protected:
     void end_atomic() { Thread::unlock(); }
     
     //Exercise
-    void block() { Thread::wait(); }
-    void release() { Thread::sinalize(); }
+    void block() { 
+        Thread *current = Thread::self();
+        _waiting.insert(&(current->_link));
+        current->wait();
+    }
+    
+    void release() { 
+        Thread *next = _waiting.remove()->object();
+        next->pass();
+    }
     //
     
     void sleep() { Thread::yield(); } // implicit unlock()

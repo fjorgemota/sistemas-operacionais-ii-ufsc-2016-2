@@ -9,7 +9,7 @@
 
 using namespace EPOS;
 
-const int iterations = 10;
+const int iterations = 100;
 
 Semaphore table;
 
@@ -27,7 +27,7 @@ int philosopher(int n, int l, int c)
 
         table.p();
         Display::position(l, c);
-        cout << "thinking";
+        cout << n << " is thinking";
         table.v();
 
         Delay thinking(2000000);
@@ -37,7 +37,7 @@ int philosopher(int n, int l, int c)
 
         table.p();
         Display::position(l, c);
-        cout << " eating ";
+        cout << n << " is eating  ";
         table.v();
 
         Delay eating(1000000);
@@ -48,7 +48,7 @@ int philosopher(int n, int l, int c)
 
     table.p();
     Display::position(l, c);
-    cout << "  done  ";
+    cout << "    done    ";
     table.v();
 
     return iterations;

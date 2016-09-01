@@ -40,7 +40,7 @@ public:
         FINISHING
     };
 
-    // Thread Priority
+    //sinal Thread Priority
     typedef unsigned int Priority;
     enum {
         HIGH = 0,
@@ -79,8 +79,8 @@ public:
     void resume();
     
     //Exercise
-    static void wait();
-    static void sinalize();
+    void wait();
+    void sinalize();
     //
 
     static Thread * volatile self() { return running(); }
