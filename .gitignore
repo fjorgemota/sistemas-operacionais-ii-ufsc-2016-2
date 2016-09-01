@@ -1,3 +1,4 @@
 img/
 app/p*
+include/system/config.h
 *.o
