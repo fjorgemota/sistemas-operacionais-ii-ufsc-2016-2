@@ -4,7 +4,6 @@
 #define __semaphore_h
 
 #include <synchronizer.h>
-#include <utility/queue.h>
 
 __BEGIN_SYS
 

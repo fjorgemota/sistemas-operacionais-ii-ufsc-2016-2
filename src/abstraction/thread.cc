@@ -168,13 +168,14 @@ void Thread::wait()
     lock();
 
     db<Thread>(TRC) << "Thread::wait(this=" << this << ")" << endl;
-
+    //Maybe remove this if. If a thread will be blocked, it will be running.
     if(_running != this)
         _ready.remove(this);
 
     _state = WAITING;
     _waiting.insert(&_link);
-
+    
+    //Same thing here.
     if((_running == this) && !_ready.empty()) {
         _running = _ready.remove()->object();
         _running->_state = RUNNING;
@@ -187,6 +188,26 @@ void Thread::wait()
     unlock();
 }
 
+void Thread::wt()
+{
+    lock();
+
+    db<Thread>(TRC) << "Thread::wait(running=" << _running << ")" << endl;
+
+    if(!_ready.empty()) {
+        Thread * prev = _running;
+        prev->_state = WAITING;
+        _waiting.insert(&prev->_link);
+
+        _running = _ready.remove()->object();
+        _running->_state = RUNNING;
+
+        dispatch(prev, _running);
+    } else
+        idle();
+
+    unlock();
+}
 
 void Thread::sinalize()
 {
@@ -195,10 +216,24 @@ void Thread::sinalize()
     db<Thread>(TRC) << "Thread::sinalize(this=" << this << ")" << endl;
 
    _waiting.remove(this);
-   _state = READY;
-   _ready.insert(&_link);
+   this->_state = READY;
+   _ready.insert(&(this->_link));
 
    unlock();
+}
+
+void Thread::sinal()
+{
+    lock();
+
+    db<Thread>(TRC) << "Thread::sinalize(this=" << _running << ")" << endl;
+    if (!_waiting.empty()) {
+        Thread * _sinalized = _waiting.remove()->object();
+        _sinalized->_state = READY;
+        _ready.insert(&_sinalized->_link);
+    }
+
+  unlock();
 }
 
 

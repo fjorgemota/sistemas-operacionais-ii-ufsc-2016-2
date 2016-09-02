@@ -14,7 +14,7 @@ protected:
     Thread::Queue _waiting; 
     
     Synchronizer_Common() {
-        _waiting = Thread::Queue();
+         _waiting = Thread::Queue();
     }
     
     
@@ -30,13 +30,16 @@ protected:
     //Exercise
     void block() { 
         Thread *current = Thread::self();
-        _waiting.insert(&(current->_link));
+        _waiting.insert(&current->_link);
         current->wait();
     }
     
     void release() { 
-        Thread *next = _waiting.remove()->object();
-        next->pass();
+        if (!_waiting.empty()) {
+            Thread *next = _waiting.remove()->object();
+            //next->pass();
+            next->sinalize();
+        }
     }
     //
     

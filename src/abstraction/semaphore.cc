@@ -2,7 +2,6 @@
 
 #include <semaphore.h>
 #include <thread.h>
-#include <utility/queue.h>
 
 
 

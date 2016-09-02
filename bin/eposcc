@@ -6,7 +6,7 @@
 #=========================================================================
 # PATHS
 #=========================================================================
-EPOS=/home/cabox/workspace/sistemas-operacionais-ii-ufsc-2016-2
+EPOS=/home/ubuntu/workspace/epos
 TMP=/tmp
 INC=$EPOS/include
 SRC=$EPOS/src
