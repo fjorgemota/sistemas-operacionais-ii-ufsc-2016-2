@@ -188,6 +188,7 @@ void Thread::wait()
     unlock();
 }
 
+//Method for test
 void Thread::wt()
 {
     lock();
@@ -214,14 +215,15 @@ void Thread::sinalize()
     lock();
 
     db<Thread>(TRC) << "Thread::sinalize(this=" << this << ")" << endl;
-
-   _waiting.remove(this);
-   this->_state = READY;
-   _ready.insert(&(this->_link));
-
+    if (!_waiting.empty()) {
+       _waiting.remove(this);
+       this->_state = READY;
+       _ready.insert(&(this->_link));
+    }
    unlock();
 }
 
+//Method for test
 void Thread::sinal()
 {
     lock();

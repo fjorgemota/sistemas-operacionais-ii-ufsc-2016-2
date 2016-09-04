@@ -4,7 +4,6 @@
 #define __ia32_h
 
 #include <cpu.h>
-
 __BEGIN_SYS
 
 class IA32: public CPU_Common
