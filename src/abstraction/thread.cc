@@ -25,6 +25,7 @@ void Thread::constructor_prolog(unsigned int stack_size)
     lock();
 
     _stack = reinterpret_cast<char *>(kmalloc(stack_size));
+    _waitingJoin = Thread::Queue();
 }
 
 
@@ -74,8 +75,11 @@ int Thread::join()
 
     db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
 
-    while(_state != FINISHING)
-        yield(); // implicit unlock()
+    if(_state != FINISHING) {
+        //waitJoin(); // implicit unlock()
+        _waitingJoin.insert(&_running->_link);
+        _running->wait();
+    }
 
     unlock();
 
@@ -188,27 +192,7 @@ void Thread::wait()
     unlock();
 }
 
-//Method for test
-void Thread::wt()
-{
-    lock();
 
-    db<Thread>(TRC) << "Thread::wait(running=" << _running << ")" << endl;
-
-    if(!_ready.empty()) {
-        Thread * prev = _running;
-        prev->_state = WAITING;
-        _waiting.insert(&prev->_link);
-
-        _running = _ready.remove()->object();
-        _running->_state = RUNNING;
-
-        dispatch(prev, _running);
-    } else
-        idle();
-
-    unlock();
-}
 
 void Thread::sinalize()
 {
@@ -223,20 +207,7 @@ void Thread::sinalize()
    unlock();
 }
 
-//Method for test
-void Thread::sinal()
-{
-    lock();
 
-    db<Thread>(TRC) << "Thread::sinalize(this=" << _running << ")" << endl;
-    if (!_waiting.empty()) {
-        Thread * _sinalized = _waiting.remove()->object();
-        _sinalized->_state = READY;
-        _ready.insert(&_sinalized->_link);
-    }
-
-  unlock();
-}
 
 
 void Thread::exit(int status)
@@ -245,20 +216,26 @@ void Thread::exit(int status)
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
 
-    while(_ready.empty() && !_suspended.empty())
+    Thread::Queue _waitingJoin = _running->_waitingJoin;
+    while(_ready.empty() && !_suspended.empty() && _waitingJoin.empty())
         idle(); // implicit unlock();
 
     lock();
-
+    
+    while(!_waitingJoin.empty()) {
+        Thread * _joined = _waitingJoin.remove()->object();
+        _joined->sinalize();
+    }
+    
     if(!_ready.empty()) {
         Thread * prev = _running;
         prev->_state = FINISHING;
-        *reinterpret_cast<int *>(prev->_stack) = status;
 
+        *reinterpret_cast<int *>(prev->_stack) = status;
         _running = _ready.remove()->object();
         _running->_state = RUNNING;
-
         dispatch(prev, _running);
+
     } else {
         db<Thread>(WRN) << "The last thread in the system has exited!" << endl;
         if(reboot) {

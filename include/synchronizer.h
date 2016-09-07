@@ -5,11 +5,15 @@
 
 #include <cpu.h>
 #include <thread.h>
+#include <utility/ostream.h>
 
 __BEGIN_SYS
 
+
 class Synchronizer_Common
 {
+private:
+    OStream c;
 protected:
     Thread::Queue _waiting; 
     
@@ -29,14 +33,18 @@ protected:
     
     //Exercise
     void block() { 
+        //begin_atomic();
         Thread *current = Thread::self();
+        // c << "Thread Blocked: " << current << endl;
         _waiting.insert(&current->_link);
         current->wait();
     }
     
     void release() { 
+        //begin_atomic();
         if (!_waiting.empty()) {
             Thread *next = _waiting.remove()->object();
+            // c << "Thread Released: " << next << endl;
             //next->pass();
             next->sinalize();
         }

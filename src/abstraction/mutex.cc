@@ -40,7 +40,8 @@ void Mutex::unlock()
     if (_waiting.empty()) {
         _locked = false;
         end_atomic();
-    }else {
+        //release();
+    } else {
         // wakeup(); // implicit end_atomic()
         release();
     }
