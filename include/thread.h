@@ -81,8 +81,6 @@ public:
     //Exercise
     void wait();
     void sinalize();
-    static void wt();
-    static void sinal();
     //
 
     static Thread * volatile self() { return running(); }
