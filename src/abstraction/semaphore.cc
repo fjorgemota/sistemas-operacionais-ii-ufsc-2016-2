@@ -23,12 +23,9 @@ void Semaphore::p()
 {
     db<Synchronizer>(TRC) << "Semaphore::p(this=" << this << ",value=" << _value << ")" << endl;
 
-    
-    //while(_value < 0) //remove while...
     fdec(_value);
     begin_atomic();
     if(_value < 0) { // Insert a lock and unlock to grant that nothing will change.
-        //sleep();
         block();
     } else {
         end_atomic();
@@ -44,7 +41,6 @@ void Semaphore::v()
     finc(_value);
     begin_atomic();
     if(_value < 1) {
-        //wakeup(); //to enable interruptions. Magically, the process will execute?
         release();
     } else {
         end_atomic();

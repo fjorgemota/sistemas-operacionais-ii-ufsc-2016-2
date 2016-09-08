@@ -76,7 +76,6 @@ int Thread::join()
     db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
 
     if(_state != FINISHING) {
-        //waitJoin(); // implicit unlock()
         _waitingJoin.insert(&_running->_link);
         _running->wait();
     }
