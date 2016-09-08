@@ -35,7 +35,6 @@ protected:
     void block() { 
         //begin_atomic();
         Thread *current = Thread::self();
-        // c << "Thread Blocked: " << current << endl;
         _waiting.insert(&current->_link);
         current->wait();
     }
@@ -44,8 +43,6 @@ protected:
         //begin_atomic();
         if (!_waiting.empty()) {
             Thread *next = _waiting.remove()->object();
-            // c << "Thread Released: " << next << endl;
-            //next->pass();
             next->sinalize();
         }
     }
