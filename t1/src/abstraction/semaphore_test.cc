@@ -10,7 +10,7 @@
 
 using namespace EPOS;
 
-const int iterations = 50;
+const int iterations = 10;
 
 Semaphore table;
 

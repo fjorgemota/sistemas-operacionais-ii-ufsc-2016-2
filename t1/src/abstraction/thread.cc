@@ -25,7 +25,7 @@ void Thread::constructor_prolog(unsigned int stack_size)
     lock();
 
     _stack = reinterpret_cast<char *>(kmalloc(stack_size));
-    _waitingJoin = Thread::Queue();
+    _waitingJoin = Thread::Queue();// another method for this?
 }
 
 

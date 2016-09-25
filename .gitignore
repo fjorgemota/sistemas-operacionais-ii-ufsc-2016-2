@@ -1,4 +1,6 @@
-img/
-app/p*
-include/system/config.h
+*/img/
+*/app/p*
+*/include/system/config.h
 *.o
+o
+
