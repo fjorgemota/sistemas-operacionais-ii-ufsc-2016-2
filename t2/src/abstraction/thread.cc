@@ -71,6 +71,8 @@ Thread::~Thread()
     lock();
 
     kfree(_stack);
+
+    unlock();
 }
 
 
@@ -266,8 +268,6 @@ void Thread::wakeup_all(Queue * q, bool exiting)
         t->_waiting = 0;
         _ready.insert(&t->_link);
     }
-    
-    kfree(q);
     
     unlock();
 
