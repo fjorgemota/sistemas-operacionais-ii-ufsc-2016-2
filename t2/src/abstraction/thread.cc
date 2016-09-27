@@ -24,6 +24,7 @@ void Thread::constructor_prolog(unsigned int stack_size)
     lock();
 
     _stack = reinterpret_cast<char *>(kmalloc(stack_size));
+    _waitingJoin = Thread::Queue();// another method for this?
 }
 
 
@@ -60,11 +61,14 @@ Thread::~Thread()
 
     _ready.remove(this);
     _suspended.remove(this);
-
-    if(_waiting)
+    
+    
+    if(_waiting) {
         _waiting->remove(this);
+    }
+    wakeup_all(&_waitingJoin, true); // Implict unlock();
 
-    unlock();
+    lock();
 
     kfree(_stack);
 }
@@ -75,9 +79,10 @@ int Thread::join()
     lock();
 
     db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
-
-    while(_state != FINISHING)
-        yield(); // implicit unlock()
+    
+    if(this->_state != FINISHING && _running != this) {
+        Thread::sleep(&_waitingJoin);// Implicit unlock();
+    }
 
     unlock();
 
@@ -169,19 +174,23 @@ void Thread::yield()
 void Thread::exit(int status)
 {
     lock();
-
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
 
-    while(_ready.empty() && !_suspended.empty())
+    Thread::Queue *q = &(running()->_waitingJoin);
+    
+    
+    while(_ready.empty() && !_suspended.empty() && q->empty()) {
         idle(); // implicit unlock();
-
+        lock();
+    }
+    
+    Thread::wakeup_all(q, true);
     lock();
-
+    
     if(!_ready.empty()) {
         Thread * prev = _running;
         prev->_state = FINISHING;
         *reinterpret_cast<int *>(prev->_stack) = status;
-
         _running = _ready.remove()->object();
         _running->_state = RUNNING;
 
@@ -244,8 +253,7 @@ void Thread::wakeup(Queue * q)
         reschedule();
 }
 
-
-void Thread::wakeup_all(Queue * q)
+void Thread::wakeup_all(Queue * q, bool exiting)
 {
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
@@ -258,10 +266,13 @@ void Thread::wakeup_all(Queue * q)
         t->_waiting = 0;
         _ready.insert(&t->_link);
     }
-
+    
+    kfree(q);
+    
     unlock();
 
-    if(preemptive)
+    // Should not preempt if exiting..because it cannot "yield" from exit
+    if(preemptive && !exiting)
         reschedule();
 }
 

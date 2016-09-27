@@ -94,7 +94,8 @@ protected:
 
     static void sleep(Queue * q);
     static void wakeup(Queue * q);
-    static void wakeup_all(Queue * q);
+    static void wakeup_all(Queue * q, bool exiting = false);
+
 
     static void reschedule();
     static void time_slicer(const IC::Interrupt_Id & interrupt);
@@ -111,6 +112,7 @@ protected:
     Context * volatile _context;
     volatile State _state;
     Queue * _waiting;
+    Queue _waitingJoin;
     Queue::Element _link;
 
     static Scheduler_Timer * _timer;
