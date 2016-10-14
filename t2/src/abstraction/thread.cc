@@ -68,11 +68,11 @@ Thread::~Thread()
     }
     wakeup_all(&_waitingJoin, true); // Implict unlock();
 
-    lock();
+    //lock();
 
-    kfree(_stack);
+    //kfree(_stack);
 
-    unlock();
+    //unlock();
 }
 
 
