@@ -19,6 +19,9 @@ Thread* volatile Thread::_running;
 Thread* Thread::_idle;
 Thread::Queue Thread::_ready;
 Thread::Queue Thread::_suspended;
+// Thread::Queue Thread::_waitingGlobal;
+volatile int Thread::_waitingGlobal = 0;
+typedef unsigned int Priority;
 
 // Methods
 void Thread::constructor_prolog(unsigned int stack_size)
@@ -66,6 +69,7 @@ Thread::~Thread()
 
     if(_waiting) {
         _waiting->remove(this);
+        _waitingGlobal--;
     }
 
     wakeup_all(&_waitingJoin, true); // Implict unlock();
@@ -162,7 +166,7 @@ void Thread::yield()
     if (_ready.empty()) {
         idle();
     }
-    
+
     Thread * prev = _running;
     prev->_state = READY;
     _ready.insert(&prev->_link);
@@ -185,8 +189,7 @@ void Thread::exit(int status)
     Thread::Queue *q = &(running()->_waitingJoin);
     
     
-    // while(_ready.empty() && !_suspended.empty() && q->empty()) {
-    if(_ready.empty() && !_suspended.empty() && q->empty()) {
+    if(_ready.empty() && !_suspended.empty() && _waitingGlobal > 0 && q->empty()) {
         idle(); // implicit unlock();
     }
     lock();
@@ -230,6 +233,8 @@ void Thread::sleep(Queue * q)
     prev->_waiting = q;
     q->insert(&prev->_link);
 
+    _waitingGlobal++;
+
     _running = _ready.remove()->object();
     _running->_state = RUNNING;
 
@@ -250,6 +255,9 @@ void Thread::wakeup(Queue * q)
         Thread * t = q->remove()->object();
         t->_state = READY;
         t->_waiting = 0;
+
+        _waitingGlobal--;
+
         _ready.insert(&t->_link);
     }
 
@@ -270,6 +278,9 @@ void Thread::wakeup_all(Queue * q, bool exiting)
         Thread * t = q->remove()->object();
         t->_state = READY;
         t->_waiting = 0;
+
+        _waitingGlobal--;
+
         _ready.insert(&t->_link);
     }
     
@@ -315,7 +326,7 @@ void Thread::dispatch(Thread * prev, Thread * next)
 
 int Thread::__idle() {
     lock();
-    while (!_suspended.empty()) {
+    while (!_suspended.empty() || _waitingGlobal > 0) {
         db<Thread>(TRC) << "Thread::idle()" << endl;
     
         db<Thread>(INF) << "There are no runnable threads at the moment!" << endl;
@@ -327,10 +338,11 @@ int Thread::__idle() {
         
         if (!_ready.empty()) {
             _idle->suspend(); // Implicit unlock();
-        } 
+        }
         lock();
     }
     _idle->exit(0);
+
     //shut system down
     return 0;
 }

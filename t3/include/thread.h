@@ -124,6 +124,7 @@ private:
     static Thread * _idle;
     static Queue _ready;
     static Queue _suspended;
+    static volatile int _waitingGlobal;
 };
 
 
