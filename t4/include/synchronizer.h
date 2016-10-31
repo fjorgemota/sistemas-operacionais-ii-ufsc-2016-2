@@ -5,6 +5,7 @@
 
 #include <cpu.h>
 #include <thread.h>
+#include <pi.h>
 
 __BEGIN_SYS
 

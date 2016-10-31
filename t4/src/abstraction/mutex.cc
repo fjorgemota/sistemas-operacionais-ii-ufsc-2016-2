@@ -21,10 +21,13 @@ void Mutex::lock()
     db<Synchronizer>(TRC) << "Mutex::lock(this=" << this << ")" << endl;
 
     begin_atomic();
-    if(tsl(_locked))
+    if(tsl(_locked)) {
+        p_check();
         sleep(); // implicit end_atomic()
-    else
+        p_owner();
+    } else {
         end_atomic();
+    }
 }
 
 

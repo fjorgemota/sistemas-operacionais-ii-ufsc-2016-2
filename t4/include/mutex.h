@@ -4,10 +4,11 @@
 #define __mutex_h
 
 #include <synchronizer.h>
+#include <pi_simple.h>
 
 __BEGIN_SYS
 
-class Mutex: protected Synchronizer_Common
+class Mutex: protected Synchronizer_Common, protected Simple_Priority_Inv_Handler
 {
 public:
     Mutex();

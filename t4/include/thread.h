@@ -17,8 +17,12 @@ class Thread
     friend class Init_First;
     friend class System;
     friend class Synchronizer_Common;
+    friend class Mult_Priority_Inv_Handler;
+    friend class Simple_Priority_Inv_Handler;
     friend class Alarm;
     friend class IA32;
+    friend class Priority_Inversion_Common;
+
 
 protected:
     static const bool preemptive = Traits<Thread>::preemptive;
@@ -71,7 +75,29 @@ public:
     const volatile State & state() const { return _state; }
 
     const volatile Priority & priority() const { return _link.rank(); }
-    void priority(const Priority & p);
+    void priority(const Priority & p) {
+        lock();
+        _link.rank(p);
+        Thread::Queue *q;
+        switch (_state)  {
+            case READY:
+                q = &_ready;
+                break;
+            case SUSPENDED:
+                q = &_suspended;
+                break;
+            case WAITING:
+                q = _waiting;
+                break;
+            default:
+                unlock();
+                return;
+        }
+        q->remove(this);
+        q->insert(&_link);
+        unlock();
+    }
+
 
     int join();
     void pass();
@@ -97,6 +123,7 @@ protected:
     static void wakeup_all(Queue * q, bool exiting = false);
 
 
+
     static void reschedule();
     static void time_slicer(const IC::Interrupt_Id & interrupt);
 
@@ -116,6 +143,9 @@ protected:
     Queue * _waiting;
     Queue _waitingJoin;
     Queue::Element _link;
+    Queue::Element _linkOwner;
+    volatile Priority original_priority;
+    volatile bool has_original_priority;
 
     static Scheduler_Timer * _timer;
 
@@ -124,12 +154,13 @@ private:
     static Thread * _idle;
     static Queue _ready;
     static Queue _suspended;
+    static volatile int _waitingGlobal;
 };
 
 
 template<typename ... Tn>
 inline Thread::Thread(int (* entry)(Tn ...), Tn ... an)
-: _state(READY), _waiting(0), _link(this, NORMAL)
+: _state(READY), _waiting(0), _link(this, NORMAL), _linkOwner(this, NORMAL)
 {
     constructor_prolog(STACK_SIZE);
     _context = CPU::init_stack(_stack + STACK_SIZE, &__exit, entry, an ...);
@@ -138,7 +169,7 @@ inline Thread::Thread(int (* entry)(Tn ...), Tn ... an)
 
 template<typename ... Tn>
 inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
-: _state(conf.state), _waiting(0), _link(this, conf.priority)
+: _state(conf.state), _waiting(0), _link(this, conf.priority), _linkOwner(this, conf.priority)
 {
     constructor_prolog(conf.stack_size);
     _context = CPU::init_stack(_stack + conf.stack_size, &__exit, entry, an ...);
