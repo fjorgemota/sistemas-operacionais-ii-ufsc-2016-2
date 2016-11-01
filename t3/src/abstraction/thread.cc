@@ -19,7 +19,6 @@ Thread* volatile Thread::_running;
 Thread* Thread::_idle;
 Thread::Queue Thread::_ready;
 Thread::Queue Thread::_suspended;
-// Thread::Queue Thread::_waitingGlobal;
 volatile int Thread::_waitingGlobal = 0;
 typedef unsigned int Priority;
 
